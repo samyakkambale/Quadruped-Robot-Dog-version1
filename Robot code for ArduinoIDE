@@ -1,0 +1,248 @@
+#define CUSTOM_SETTINGS
+#define INCLUDE_GAMEPAD_MODULE
+
+#include <DabbleESP32.h>
+#include <ESP32Servo.h>
+
+Servo frontRight;
+Servo frontLeft;
+Servo backRight;
+Servo backLeft;
+
+unsigned long squarePressStart = 0;
+bool squarePreviouslyPressed = false;
+bool jumpExecuted = false;
+
+void setup() {
+
+  frontRight.attach(22);
+  frontLeft.attach(21);
+  backRight.attach(18);
+  backLeft.attach(19);
+
+  frontRight.write(90);
+  frontLeft.write(90);
+  backRight.write(90);
+  backLeft.write(90);
+
+  Dabble.begin("RobotDog");
+
+  delay(2000);
+}
+
+// ================= MOVEMENTS =================
+
+void moveForward() {
+//1st action
+frontRight.write(100);
+frontLeft.write(80);
+backRight.write(120);
+backLeft.write(60);
+delay(50);
+frontRight.write(120);
+frontLeft.write(60);
+delay(500);
+
+//2nd action
+frontRight.write(80);
+frontLeft.write(100);
+backRight.write(60);
+backLeft.write(120);
+delay(500);
+}
+
+void moveBackward() {
+
+ //1st action
+frontRight.write(120);
+frontLeft.write(60);
+backRight.write(100);
+backLeft.write(80);
+delay(50);
+backRight.write(120);
+backLeft.write(60);
+delay(500);
+//2nd action
+frontRight.write(60);
+frontLeft.write(120);
+backRight.write(80);
+backLeft.write(100);
+delay(500);
+
+}
+
+void moveRight() {
+
+  frontRight.write(70);
+  backRight.write(60);
+  frontLeft.write(120);
+
+  backLeft.write(40);
+  delay(200);
+
+  backLeft.write(140);
+  delay(200);
+}
+
+void moveLeft() {
+
+  frontLeft.write(110);
+  backLeft.write(120);
+  frontRight.write(60);
+
+  backRight.write(140);
+  delay(200);
+
+  backRight.write(40);
+  delay(200);
+}
+
+// ================= ACTIONS =================
+
+void sitPosition() {
+
+  backRight.write(150);
+  backLeft.write(30);
+}
+
+void layPosition() {
+
+  frontRight.write(160);
+  frontLeft.write(20);
+  backRight.write(160);
+  backLeft.write(20);
+}
+
+void standUp() {
+
+  // Back legs first
+  backRight.write(90);
+  backLeft.write(90);
+
+  delay(500);
+
+  // Front legs second
+  frontRight.write(90);
+  frontLeft.write(90);
+}
+
+void shakeHand() {
+
+  // Sit first
+  backRight.write(150);
+  backLeft.write(30);
+
+  delay(500);
+
+  for (int i = 0; i < 5; i++) {
+
+    frontRight.write(180);
+    delay(300);
+
+    frontRight.write(160);
+    delay(300);
+  }
+
+  // Return to sitting position
+  backRight.write(150);
+  backLeft.write(30);
+}
+void jumpAction() {
+
+  // Lay position
+  frontRight.write(160);
+  frontLeft.write(20);
+  backRight.write(160);
+  backLeft.write(20);
+
+  delay(300);
+
+  // Front legs first
+  frontRight.write(20);
+  frontLeft.write(160);
+
+  delay(200);
+
+  // Rear legs second
+  backRight.write(20);
+  backLeft.write(160);
+
+  delay(2000);
+   frontRight.write(90);
+  frontLeft.write(90);
+  backRight.write(90);
+  backLeft.write(90);
+}
+
+// ================= MAIN LOOP =================
+
+void loop() {
+
+  Dabble.processInput();
+
+  // ===== Square Button (Sit / Jump) =====
+
+  if (GamePad.isSquarePressed()) {
+
+    if (!squarePreviouslyPressed) {
+
+      squarePressStart = millis();
+      squarePreviouslyPressed = true;
+      jumpExecuted = false;
+    }
+
+    // Hold 2 seconds -> Jump
+    if ((millis() - squarePressStart >= 2000) && !jumpExecuted) {
+
+      jumpAction();
+      jumpExecuted = true;
+    }
+  }
+  else {
+
+    // Released before 2 sec -> Sit
+    if (squarePreviouslyPressed && !jumpExecuted) {
+
+      sitPosition();
+    }
+
+    squarePreviouslyPressed = false;
+  }
+
+  // ===== Movement Controls =====
+
+  if (GamePad.isUpPressed()) {
+
+    moveForward();
+  }
+
+  else if (GamePad.isDownPressed()) {
+
+    moveBackward();
+  }
+
+  else if (GamePad.isLeftPressed()) {
+
+    moveLeft();
+  }
+
+  else if (GamePad.isRightPressed()) {
+
+    moveRight();
+  }
+
+  else if (GamePad.isCirclePressed()) {
+
+    layPosition();
+  }
+
+  else if (GamePad.isCrossPressed()) {
+
+    shakeHand();
+  }
+
+  else if (GamePad.isTrianglePressed()) {
+
+    standUp();
+  }
+}
